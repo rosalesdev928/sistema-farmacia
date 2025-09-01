@@ -11,6 +11,11 @@ import { body, validationResult } from 'express-validator';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const { body, validationResult } = require('express-validator');
 
 const app = express();
 app.use(cors());
@@ -44,18 +49,22 @@ app.use((err, req, res, next) => {
 app.use('/favicons', express.static(path.join(__dirname, 'dist', 'favicons')));
 
 
-
+// db/pool.js (por ejemplo)
+const mysql = require('mysql2/promise');
 // Pool de conexiones MySQL
+
 const pool = mysql.createPool({
-  host:               'localhost',
-  user:               'root',
-  password:           '',
-  database:           'farmacia',
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
   waitForConnections: true,
-  connectionLimit:    10,
-  queueLimit:         0
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
+module.exports = pool;
 
 // Helper para enviar HTML con no-store
 function sendHtml(res, file) {
