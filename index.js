@@ -5,7 +5,8 @@ import mysql             from 'mysql2/promise';
 import path              from 'path';
 import { fileURLToPath } from 'url';
 import { body, validationResult } from 'express-validator';
-
+// 👇 pon esto como primera línea del archivo
+import 'dotenv/config';
 
 // Esto permite usar __dirname en un módulo ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -18,7 +19,6 @@ app.use(express.json());
 
 // — AUMENTA EL LÍMITE DE JSON y URL-ENCODED — 
 app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 
 // ❌ No cache para HTML (login, index, etc.)
@@ -433,7 +433,8 @@ app.patch('/users/:id/password', async (req, res) => {
 });
 // Ejemplo de /login (ilustrativo)
 app.post('/login', async (req, res) => {
-  const { username, password } = req.body;
+  const username = req.body.username ?? req.body.usuario ?? '';
+  const password = req.body.password ?? '';
 
   const sql = `
     SELECT u.id, u.username, u.nombreCompleto, u.celular, u.email,
@@ -449,37 +450,33 @@ app.post('/login', async (req, res) => {
     if (!rows.length) return res.status(401).json({ error: 'Credenciales inválidas' });
 
     const user = rows[0];
-    // Parsear el JSON que viene de MySQL
-let accesos = [];
-try { accesos = JSON.parse(user.accesos || '[]'); } catch { accesos = []; }
+    let accesos = [];
+    try { accesos = JSON.parse(user.accesos || '[]'); } catch {}
+    const accesosPlano = accesos.filter(a => a?.acceso === true)
+                                .map(a => String(a.modulo || '').toUpperCase());
 
-// (Opcional) también genera un arreglo "plano" de strings para compatibilidad
-const accesosPlano = accesos
-  .filter(a => a && a.acceso === true)
-  .map(a => String(a.modulo || '').toUpperCase()); // ['USUARIOS','CLIENTES',...]
-
-return res.json({
-  message: 'Bienvenido',
-  user: {
-    id: user.id,
-    username: user.username,
-    nombreCompleto: user.nombreCompleto,
-    celular: user.celular,
-    email: user.email,
-    dni: user.dni,
-    direccion: user.direccion,
-    perfilId: user.perfilId,
-    rol: user.rol,
-    accesos,        // ← array de objetos (el que quieres en localStorage)
-    accesosPlano    // ← array de strings (por si tu front viejo lo necesita)
-  }
-});
-
+    return res.json({
+      message: 'Bienvenido',
+      user: {
+        id: user.id,
+        username: user.username,
+        nombreCompleto: user.nombreCompleto,
+        celular: user.celular,
+        email: user.email,
+        dni: user.dni,
+        direccion: user.direccion,
+        perfilId: user.perfilId,
+        rol: user.rol,
+        accesos,
+        accesosPlano
+      }
+    });
   } catch (e) {
-    console.error(e);
+    console.error('POST /login', e);
     res.status(500).json({ error: 'Error del servidor' });
   }
 });
+
 
 
 // — CRUD Clientes —
