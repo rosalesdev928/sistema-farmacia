@@ -47,15 +47,15 @@ app.use('/favicons', express.static(path.join(__dirname, 'dist', 'favicons')));
 
 // Pool de conexiones MySQL
 const pool = mysql.createPool({
-  host:               'localhost',
-  user:               'root',
-  password:           '',
-  database:           'farmacia',
+  host:               process.env.DB_HOST || '127.0.0.1',
+  user:               process.env.DB_USER || 'leo',
+  password:           process.env.DB_PASSWORD || 'leitodevbd',
+  database:           process.env.DB_NAME || 'bd_farmacia_leo',
+  port:               Number(process.env.DB_PORT || 3306),
   waitForConnections: true,
   connectionLimit:    10,
   queueLimit:         0
 });
-
 
 // Helper para enviar HTML con no-store
 function sendHtml(res, file) {
